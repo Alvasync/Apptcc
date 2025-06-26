@@ -62,56 +62,58 @@ class _LoginPageState extends State<LoginPage> {
       appBar: AppBar(title: Text(_isLogin ? 'Login' : 'Cadastro')),
       body: Padding(
         padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            TextField(
-              controller: _emailController,
-              style: TextStyle(color: color),
-              decoration: InputDecoration(
-                labelText: 'Email',
-                labelStyle: TextStyle(color: color.withOpacity(0.7)),
-                filled: true,
-                fillColor: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.grey[900]
-                    : Colors.white,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              TextField(
+                controller: _emailController,
+                style: TextStyle(color: color),
+                decoration: InputDecoration(
+                  labelText: 'Email',
+                  labelStyle: TextStyle(color: color.withOpacity(0.7)),
+                  filled: true,
+                  fillColor: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.grey[900]
+                      : Colors.white,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _senhaController,
-              style: TextStyle(color: color),
-              decoration: InputDecoration(
-                labelText: 'Senha',
-                labelStyle: TextStyle(color: color.withOpacity(0.7)),
-                filled: true,
-                fillColor: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.grey[900]
-                    : Colors.white,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-              obscureText: true,
-            ),
-            if (_erro != null) ...[
               const SizedBox(height: 16),
-              Text(_erro!, style: const TextStyle(color: Colors.red)),
-            ],
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _loading ? null : _autenticar,
-                child: _loading
-                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                    : Text(_isLogin ? 'Entrar' : 'Cadastrar'),
+              TextField(
+                controller: _senhaController,
+                style: TextStyle(color: color),
+                decoration: InputDecoration(
+                  labelText: 'Senha',
+                  labelStyle: TextStyle(color: color.withOpacity(0.7)),
+                  filled: true,
+                  fillColor: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.grey[900]
+                      : Colors.white,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                obscureText: true,
               ),
-            ),
-            TextButton(
-              onPressed: _loading ? null : () => setState(() => _isLogin = !_isLogin),
-              child: Text(_isLogin ? 'Não tem conta? Cadastre-se' : 'Já tem conta? Faça login'),
-            ),
-          ],
+              if (_erro != null) ...[
+                const SizedBox(height: 16),
+                Text(_erro!, style: const TextStyle(color: Colors.red)),
+              ],
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _loading ? null : _autenticar,
+                  child: _loading
+                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                      : Text(_isLogin ? 'Entrar' : 'Cadastrar'),
+                ),
+              ),
+              TextButton(
+                onPressed: _loading ? null : () => setState(() => _isLogin = !_isLogin),
+                child: Text(_isLogin ? 'Não tem conta? Cadastre-se' : 'Já tem conta? Faça login'),
+              ),
+            ],
+          ),
         ),
       ),
     );
