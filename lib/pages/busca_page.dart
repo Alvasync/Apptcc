@@ -62,10 +62,15 @@ class _BuscaPageState extends State<BuscaPage> {
               decoration: InputDecoration(
                 labelText: 'Buscar por casa, terreno, apartamento, comercial...',
                 errorText: _erro,
+                filled: true,
+                fillColor: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.grey[900]
+                    : Colors.white,
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.search),
                   onPressed: _buscar,
                 ),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
               ),
               onSubmitted: (_) => _buscar(),
             ),

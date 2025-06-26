@@ -5,6 +5,7 @@ import 'pages/imovel_detalhe_page.dart';
 import 'pages/busca_page.dart';
 import 'pages/login_page.dart';
 import 'pages/precificador_page.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,7 +24,23 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   ThemeMode _themeMode = ThemeMode.dark;
-  String? _usuarioLogado; // Simulação de usuário logado
+  String? _usuarioLogado;
+
+  @override
+  void initState() {
+    super.initState();
+    FirebaseAuth.instance.authStateChanges().listen((User? user) {
+      if (user == null) {
+        setState(() {
+          _usuarioLogado = null;
+        });
+      } else {
+        setState(() {
+          _usuarioLogado = user.email;
+        });
+      }
+    });
+  }
 
   void _toggleTheme() {
     setState(() {
@@ -31,12 +48,8 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
-  void _login(String nome) {
-    setState(() => _usuarioLogado = nome);
-  }
-
-  void _logout() {
-    setState(() => _usuarioLogado = null);
+  void _logout() async {
+    await FirebaseAuth.instance.signOut();
   }
 
   @override
@@ -66,7 +79,6 @@ class _MyAppState extends State<MyApp> {
       home: HomePage(
         onToggleTheme: _toggleTheme,
         usuarioLogado: _usuarioLogado,
-        onLogin: _login,
         onLogout: _logout,
       ),
     );
@@ -76,9 +88,8 @@ class _MyAppState extends State<MyApp> {
 class HomePage extends StatefulWidget {
   final VoidCallback onToggleTheme;
   final String? usuarioLogado;
-  final void Function(String nome) onLogin;
   final VoidCallback onLogout;
-  const HomePage({super.key, required this.onToggleTheme, required this.usuarioLogado, required this.onLogin, required this.onLogout});
+  const HomePage({super.key, required this.onToggleTheme, required this.usuarioLogado, required this.onLogout});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -114,17 +125,16 @@ class _HomePageState extends State<HomePage> {
     Navigator.push(context, MaterialPageRoute(builder: (_) => const BuscaPage()));
   }
 
-  void _abrirLogin() async {
-    final nome = await Navigator.push<String>(context, MaterialPageRoute(builder: (_) => const LoginPage()));
-    if (nome != null) widget.onLogin(nome);
-  }
-
   void _abrirPrecificador() {
     if (widget.usuarioLogado == null) {
       _abrirLogin();
     } else {
       Navigator.push(context, MaterialPageRoute(builder: (_) => const PrecificadorPage()));
     }
+  }
+
+  void _abrirLogin() async {
+    await Navigator.push<String>(context, MaterialPageRoute(builder: (_) => const LoginPage()));
   }
 
   @override
@@ -195,36 +205,99 @@ class _CustomAppBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 700;
     final color = Theme.of(context).colorScheme.onBackground;
-    return AppBar(
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      title: Row(
-        children: [
-          Icon(Icons.home, color: color),
-          const SizedBox(width: 8),
-          Text(
-            'Precificador IA',
-            style: TextStyle(fontWeight: FontWeight.bold, color: color),
-          ),
-          const Spacer(),
+    if (isMobile) {
+      // MOBILE: AppBar simples com menu
+      return AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: Text('Precificador IA', style: TextStyle(fontWeight: FontWeight.bold, color: color)),
+        actions: [
           IconButton(
-            icon: Icon(
-              Theme.of(context).brightness == Brightness.dark
-                  ? Icons.wb_sunny
-                  : Icons.nightlight_round,
-              color: color,
+            icon: Icon(Icons.menu, color: color),
+            onPressed: () {
+              showModalBottomSheet(
+                context: context,
+                builder: (ctx) {
+                  return SafeArea(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ListTile(
+                          leading: Icon(Icons.search),
+                          title: Text('Buscar'),
+                          onTap: () {
+                            Navigator.pop(ctx);
+                            onBusca();
+                          },
+                        ),
+                        if (usuarioLogado != null) ...[
+                          ListTile(
+                            leading: Icon(Icons.logout),
+                            title: Text('Sair'),
+                            onTap: () {
+                              Navigator.pop(ctx);
+                              onLogout();
+                            },
+                          ),
+                          ListTile(
+                            leading: CircleAvatar(child: Text(usuarioLogado![0].toUpperCase())),
+                            title: Text(usuarioLogado!),
+                          ),
+                        ] else ...[
+                          ListTile(
+                            leading: Icon(Icons.person),
+                            title: Text('Login/Cadastro'),
+                            onTap: () {
+                              Navigator.pop(ctx);
+                              onLogin();
+                            },
+                          ),
+                        ],
+                        ListTile(
+                          leading: Icon(Icons.brightness_6),
+                          title: Text('Alternar tema'),
+                          onTap: () {
+                            Navigator.pop(ctx);
+                            onToggleTheme();
+                          },
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ],
+        centerTitle: false,
+      );
+    } else {
+      // DESKTOP: Layout horizontal
+      return AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: Row(
+          children: [
+            Icon(Icons.home, color: color),
+            const SizedBox(width: 8),
+            Text('Precificador IA', style: TextStyle(fontWeight: FontWeight.bold, color: color)),
+            const Spacer(),
+            IconButton(
+              icon: Icon(
+                Theme.of(context).brightness == Brightness.dark
+                    ? Icons.wb_sunny
+                    : Icons.nightlight_round,
+                color: color,
+              ),
+              onPressed: onToggleTheme,
+              tooltip: 'Alternar tema',
             ),
-            onPressed: onToggleTheme,
-            tooltip: 'Alternar tema',
-          ),
-          IconButton(
-            icon: Icon(Icons.search, color: color),
-            onPressed: onBusca,
-          ),
-          if (usuarioLogado != null)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0),
-              child: Row(
+            IconButton(
+              icon: Icon(Icons.search, color: color),
+              onPressed: onBusca,
+            ),
+            if (usuarioLogado != null)
+              Row(
                 children: [
                   CircleAvatar(child: Text(usuarioLogado![0].toUpperCase())),
                   const SizedBox(width: 8),
@@ -235,33 +308,27 @@ class _CustomAppBar extends StatelessWidget {
                     tooltip: 'Sair',
                   ),
                 ],
-              ),
-            )
-          else if (isMobile)
-            IconButton(
-              icon: Icon(Icons.person, color: color),
-              onPressed: onLogin,
-              tooltip: 'Login/Cadastro',
-            )
-          else
-            ElevatedButton.icon(
-              onPressed: onLogin,
-              icon: Icon(Icons.person, color: Theme.of(context).colorScheme.onPrimary),
-              label: Text('Login/Cadastro', style: TextStyle(color: Theme.of(context).colorScheme.onPrimary)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+              )
+            else
+              ElevatedButton.icon(
+                onPressed: onLogin,
+                icon: Icon(Icons.person, color: Theme.of(context).colorScheme.onPrimary),
+                label: Text('Login/Cadastro', style: TextStyle(color: Theme.of(context).colorScheme.onPrimary)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  textStyle: const TextStyle(fontWeight: FontWeight.bold),
                 ),
-                textStyle: const TextStyle(fontWeight: FontWeight.bold),
               ),
-            ),
-        ],
-      ),
-      centerTitle: false,
-    );
+          ],
+        ),
+        centerTitle: false,
+      );
+    }
   }
 }
 

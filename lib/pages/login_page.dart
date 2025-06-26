@@ -32,7 +32,19 @@ class _LoginPageState extends State<LoginPage> {
         Navigator.of(context).pop(_emailController.text.trim());
       }
     } on FirebaseAuthException catch (e) {
-      setState(() => _erro = e.message ?? 'Erro de autenticação');
+      String errorMessage;
+      if (e.code == 'weak-password') {
+        errorMessage = 'A senha fornecida é muito fraca.';
+      } else if (e.code == 'email-already-in-use') {
+        errorMessage = 'Já existe uma conta para este e-mail.';
+      } else if (e.code == 'user-not-found' || e.code == 'wrong-password') {
+        errorMessage = 'E-mail ou senha inválidos.';
+      } else if (e.code == 'invalid-email') {
+        errorMessage = 'O e-mail digitado não é válido.';
+      } else {
+        errorMessage = e.message ?? 'Erro de autenticação desconhecido.';
+      }
+      setState(() => _erro = errorMessage);
     } catch (e) {
       setState(() => _erro = 'Erro inesperado.');
     } finally {
@@ -60,7 +72,9 @@ class _LoginPageState extends State<LoginPage> {
                 labelText: 'Email',
                 labelStyle: TextStyle(color: color.withOpacity(0.7)),
                 filled: true,
-                fillColor: fillColor,
+                fillColor: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.grey[900]
+                    : Colors.white,
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
               ),
             ),
@@ -72,7 +86,9 @@ class _LoginPageState extends State<LoginPage> {
                 labelText: 'Senha',
                 labelStyle: TextStyle(color: color.withOpacity(0.7)),
                 filled: true,
-                fillColor: fillColor,
+                fillColor: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.grey[900]
+                    : Colors.white,
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
               ),
               obscureText: true,
